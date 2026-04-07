@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vid2Quiz AI — Turn Videos Into Quizzes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--surface:#111118;--surface2:#1a1a24;--border:#2a2a3a;--accent:#7c5cfc;--accent2:#fc5c7d;--accent3:#5cfcd4;--text:#e8e8f0;--text-dim:#8888aa;--text-dimmer:#44445a;--topbar:rgba(10,10,15,.88);}
+body.light{--bg:#f0f0f8;--surface:#fff;--surface2:#f4f4fc;--border:#dcdce8;--text:#18181e;--text-dim:#666680;--text-dimmer:#b0b0c4;--topbar:rgba(240,240,248,.92);}
+body.light .orb{opacity:.07;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;transition:background .35s,color .35s;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,92,252,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,92,252,.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;opacity:.18;}
+.orb1{width:700px;height:700px;background:var(--accent);top:-250px;right:-180px;animation:oF1 14s ease-in-out infinite alternate;}
+.orb2{width:550px;height:550px;background:var(--accent2);bottom:-220px;left:-130px;animation:oF2 17s ease-in-out infinite alternate;}
+.orb3{width:350px;height:350px;background:var(--accent3);top:50%;left:50%;transform:translate(-50%,-50%);animation:oF3 10s ease-in-out infinite alternate;}
+@keyframes oF1{from{transform:translate(0,0)}to{transform:translate(-50px,50px)}}
+@keyframes oF2{from{transform:translate(0,0)}to{transform:translate(50px,-40px)}}
+@keyframes oF3{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-50%) scale(1.35)}}
+#particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.pt{position:absolute;border-radius:50%;animation:ptUp linear infinite;opacity:0;}
+@keyframes ptUp{0%{transform:translateY(0) translateX(0);opacity:0;}10%{opacity:.5;}90%{opacity:.15;}100%{transform:translateY(-100vh) translateX(var(--d));opacity:0;}}
+.beam{position:fixed;width:1px;pointer-events:none;z-index:0;background:linear-gradient(to bottom,transparent,rgba(124,92,252,.45),transparent);animation:beamPulse ease-in-out infinite alternate;}
+@keyframes beamPulse{from{opacity:0;transform:scaleY(.4)}to{opacity:1;transform:scaleY(1)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes gradFlow{0%{background-position:0%}50%{background-position:100%}100%{background-position:0%}}
+@keyframes pageOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-36px)}}
+@keyframes pageIn{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:translateX(0)}}
+body.leaving{animation:pageOut .32s ease-in forwards;pointer-events:none;}
+body{animation:pageIn .45s ease-out both;}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:15px 32px;background:var(--topbar);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);transition:background .35s;}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;color:var(--text);text-decoration:none;}
+.nav-logo span{color:var(--accent);}.nav-logo em{color:var(--accent2);font-style:normal;}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.nav-badge{background:rgba(124,92,252,.15);border:1px solid rgba(124,92,252,.3);color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;padding:4px 10px;border-radius:20px;}
+.theme-btn{position:relative;width:64px;height:32px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;cursor:pointer;display:flex;align-items:center;padding:3px;transition:all .3s;overflow:hidden;}
+.theme-btn:hover{border-color:var(--accent);}
+.theme-thumb{position:absolute;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#7c5cfc,#5c3ffc);left:3px;transition:left .35s cubic-bezier(.34,1.56,.64,1),background .35s;box-shadow:0 2px 8px rgba(124,92,252,.5);z-index:2;}
+body.light .theme-thumb{left:35px;background:linear-gradient(135deg,#f59e0b,#f97316);box-shadow:0 2px 8px rgba(245,158,11,.5);}
+.theme-track{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 7px;pointer-events:none;}
+.ti-moon{opacity:1;font-size:12px;}.ti-sun{opacity:.4;font-size:12px;}
+body.light .ti-moon{opacity:.4;}body.light .ti-sun{opacity:1;}
+.nav-link{padding:9px 22px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;transition:all .25s;display:inline-flex;align-items:center;}
+.nav-link:hover{border-color:var(--accent);color:var(--accent);}
+
+/* HERO */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(124,92,252,.1);border:1px solid rgba(124,92,252,.25);border-radius:100px;padding:7px 18px 7px 12px;margin-bottom:36px;animation:fadeUp .6s .1s both;}
+.eyebrow-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent);animation:eyePulse 2s infinite;}
+@keyframes eyePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.72)}}
+.eyebrow-text{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;}
+.hero-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(44px,9.5vw,100px);line-height:.88;letter-spacing:-4px;margin-bottom:30px;animation:fadeUp .7s .2s both;}
+.hero-title .l1{display:block;color:var(--text);}
+.hero-title .l2{display:block;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 50%,var(--accent3) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200%;animation:gradFlow 5s ease infinite;}
+.hero-sub{color:var(--text-dim);font-size:18px;max-width:520px;line-height:1.75;margin:0 auto 48px;animation:fadeUp .7s .3s both;}
+.ctas{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;animation:fadeUp .7s .4s both;}
+.btn-primary{padding:17px 42px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--accent),#5c3ffc);color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:17px;cursor:pointer;position:relative;overflow:hidden;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .3s cubic-bezier(.34,1.56,.64,1);}
+.btn-primary:hover{transform:translateY(-4px) scale(1.03);box-shadow:0 20px 60px rgba(124,92,252,.5);}
+.btn-primary::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.2),transparent);opacity:0;transition:opacity .3s;}
+.btn-primary:hover::after{opacity:1;}
+.btn-secondary{padding:17px 42px;border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.025);backdrop-filter:blur(8px);color:var(--text);font-family:'Syne',sans-serif;font-weight:600;font-size:17px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .3s cubic-bezier(.34,1.56,.64,1);}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-4px);box-shadow:0 10px 34px rgba(124,92,252,.18);}
+.stats{display:flex;margin:64px auto 0;max-width:520px;width:100%;border:1px solid var(--border);border-radius:20px;background:var(--surface);overflow:hidden;animation:fadeUp .7s .55s both;}
+.stat{flex:1;padding:22px 16px;text-align:center;border-right:1px solid var(--border);}
+.stat:last-child{border-right:none;}
+.stat-num{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--accent);line-height:1;}
+.stat-lbl{font-size:11px;color:var(--text-dimmer);font-family:'DM Mono',monospace;letter-spacing:.8px;margin-top:5px;text-transform:uppercase;}
+
+/* HOW IT WORKS */
+.section{position:relative;z-index:1;padding:100px 24px;}
+.section-inner{max-width:920px;margin:0 auto;}
+.sec-label{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;}
+.sec-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,50px);letter-spacing:-2px;margin-bottom:14px;color:var(--text);}
+.sec-sub{color:var(--text-dim);font-size:16px;max-width:480px;line-height:1.7;}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:52px;}
+@media(max-width:640px){.steps-grid{grid-template-columns:1fr;}}
+.step-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;position:relative;overflow:hidden;transition:all .3s cubic-bezier(.34,1.56,.64,1);}
+.step-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(124,92,252,.5),transparent);opacity:0;transition:opacity .3s;}
+.step-card:hover{border-color:rgba(124,92,252,.4);transform:translateY(-7px);box-shadow:0 22px 50px rgba(124,92,252,.14);}
+.step-card:hover::before{opacity:1;}
+.step-num{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--accent);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.step-num::after{content:'';flex:1;height:1px;background:var(--border);}
+.step-ico{font-size:32px;margin-bottom:14px;display:block;}
+.step-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:8px;color:var(--text);}
+.step-desc{font-size:14px;color:var(--text-dim);line-height:1.65;}
+
+/* FEATURES */
+.feat-section{background:var(--surface2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;}
+@media(max-width:640px){.feat-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:400px){.feat-grid{grid-template-columns:1fr;}}
+.feat{padding:22px;background:var(--surface);border:1px solid var(--border);border-radius:16px;transition:all .25s;}
+.feat:hover{border-color:rgba(124,92,252,.4);transform:translateY(-4px);box-shadow:0 12px 32px rgba(124,92,252,.1);}
+.feat-ico{font-size:26px;margin-bottom:10px;}
+.feat-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:5px;color:var(--text);}
+.feat-desc{font-size:13px;color:var(--text-dim);line-height:1.55;}
+
+/* CTA BOTTOM */
+.cta-wrap{position:relative;z-index:1;padding:100px 24px;text-align:center;}
+.cta-box{max-width:700px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:28px;padding:64px 48px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));}
+.cta-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,46px);letter-spacing:-2px;margin-bottom:14px;color:var(--text);}
+.cta-sub{color:var(--text-dim);font-size:16px;margin-bottom:36px;line-height:1.65;}
+.cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+/* FOOTER */
+.footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:26px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+.foot-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.5px;color:var(--text);}
+.foot-logo span{color:var(--accent);}.foot-logo em{color:var(--accent2);font-style:normal;}
+.foot-text{font-size:12px;color:var(--text-dimmer);font-family:'DM Mono',monospace;}
+</style>
+</head>
+<body>
+<div id="particles"></div>
+<div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+<div class="beam" style="left:11%;height:55%;top:7%;animation-duration:4.2s;"></div>
+<div class="beam" style="left:46%;height:38%;top:18%;animation-duration:5.8s;animation-delay:1.4s;"></div>
+<div class="beam" style="left:79%;height:52%;top:4%;animation-duration:3.6s;animation-delay:2.7s;"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-logo" href="landing.html">Vid2<span>Quiz</span> <em>AI</em></a>
+  <div class="nav-right">
+    <div class="nav-badge">BETA v1.0</div>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <div class="theme-track"><span class="ti-moon">🌙</span><span class="ti-sun">☀️</span></div>
+      <div class="theme-thumb"></div>
+    </button>
+    <a class="nav-link" href="login.html" onclick="go(event,'login.html')">Sign In</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="eyebrow">
+    <div class="eyebrow-dot"></div>
+    <span class="eyebrow-text">AI-Powered · Free to Use · No Sign-up Required</span>
+  </div>
+  <h1 class="hero-title">
+    <span class="l1">Learn Faster.</span>
+    <span class="l2">Quiz Smarter.</span>
+  </h1>
+  <p class="hero-sub">Transform any YouTube video, subtitle file, or document into a personalized AI-generated quiz in under 10 seconds.</p>
+  <div class="ctas">
+    <a class="btn-primary" href="login.html" onclick="go(event,'login.html')">✨ Get Started Free</a>
+    <a class="btn-secondary" href="app.html" onclick="go(event,'app.html')">Continue as Guest →</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="statQ">0</div><div class="stat-lbl">Quizzes Made</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-lbl">Input Sources</div></div>
+    <div class="stat"><div class="stat-num">~8s</div><div class="stat-lbl">To Generate</div></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <div class="section-inner">
+    <div class="sec-label">How it works</div>
+    <h2 class="sec-title">Three steps to mastery</h2>
+    <p class="sec-sub">From video to quiz in moments — no manual work, no formatting, just learning.</p>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <span class="step-ico">🎯</span>
+        <div class="step-title">Add Your Source</div>
+        <p class="step-desc">Paste a YouTube URL, upload a subtitle file, or drop in a PDF or DOCX document.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <span class="step-ico">⚙️</span>
+        <div class="step-title">Configure Quiz</div>
+        <p class="step-desc">Choose difficulty, number of questions, focus topic, and whether to use timed mode.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <span class="step-ico">🏆</span>
+        <div class="step-title">Test Yourself</div>
+        <p class="step-desc">Answer AI-crafted multiple-choice questions and get instant explanations and scores.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section feat-section">
+  <div class="section-inner">
+    <div class="sec-label">Features</div>
+    <h2 class="sec-title">Everything you need<br>to study smarter</h2>
+    <div class="feat-grid">
+      <div class="feat"><div class="feat-ico">▶️</div><div class="feat-title">YouTube Integration</div><p class="feat-desc">Paste any YouTube link and AI fetches the transcript automatically.</p></div>
+      <div class="feat"><div class="feat-ico">📁</div><div class="feat-title">Document Support</div><p class="feat-desc">PDF, DOCX, TXT, Markdown, CSV — upload any document and quiz from it.</p></div>
+      <div class="feat"><div class="feat-ico">🎬</div><div class="feat-title">Video Upload</div><p class="feat-desc">Upload MP4 or subtitle files directly and let AI generate questions.</p></div>
+      <div class="feat"><div class="feat-ico">⏱</div><div class="feat-title">Timed Mode</div><p class="feat-desc">Set a countdown timer to simulate real exam conditions.</p></div>
+      <div class="feat"><div class="feat-ico">💡</div><div class="feat-title">Explanations</div><p class="feat-desc">Learn why each answer is correct with AI-generated explanations.</p></div>
+      <div class="feat"><div class="feat-ico">🎯</div><div class="feat-title">Custom Difficulty</div><p class="feat-desc">Easy, medium, or hard — tailor questions to your knowledge level.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-wrap">
+  <div class="cta-box">
+    <div class="cta-title">Ready to learn smarter?</div>
+    <p class="cta-sub">Join thousands of learners already using Vid2Quiz AI to study more effectively.</p>
+    <div class="cta-btns">
+      <a class="btn-primary" href="login.html" onclick="go(event,'login.html')">✨ Create Free Account</a>
+      <a class="btn-secondary" href="app.html" onclick="go(event,'app.html')">Try Without Signing Up</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="foot-logo">Vid2<span>Quiz</span> <em>AI</em></div>
+  <div class="foot-text">© 2025 Vid2Quiz AI · Built with ✨ AI</div>
+</footer>
+
+<script>
+var isDark = true;
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  try { localStorage.setItem('v2q-theme', isDark?'dark':'light'); } catch(e) {}
+}
+(function(){try{if(localStorage.getItem('v2q-theme')==='light'){isDark=false;document.body.classList.add('light');}}catch(e){}})();
+
+(function(){
+  var c=document.getElementById('particles'),cols=['#7c5cfc','#fc5c7d','#5cfcd4','#fbbf24','#a78bfa'];
+  for(var i=0;i<28;i++){var el=document.createElement('div');el.className='pt';var sz=Math.random()*4+2;el.style.cssText='width:'+sz+'px;height:'+sz+'px;left:'+Math.random()*100+'%;bottom:'+(Math.random()*10-5)+'%;background:'+cols[Math.floor(Math.random()*cols.length)]+';--d:'+(Math.random()-.5)*120+'px;animation-duration:'+(Math.random()*18+10)+'s;animation-delay:'+(Math.random()*16)+'s;';c.appendChild(el);}
+})();
+
+(function(){
+  var el=document.getElementById('statQ'),target=1247,dur=2000,startTime=null;
+  function easeOut(t){return 1-Math.pow(1-t,3);}
+  function tick(ts){if(!startTime)startTime=ts;var p=Math.min((ts-startTime)/dur,1);el.textContent=Math.round(easeOut(p)*target).toLocaleString();if(p<1)requestAnimationFrame(tick);}
+  setTimeout(function(){requestAnimationFrame(tick);},500);
+})();
+
+function go(e, url) {
+  e.preventDefault();
+  document.body.classList.add('leaving');
+  setTimeout(function(){ window.location.href=url; }, 340);
+}
+
+(function(){
+  var obs=new IntersectionObserver(function(entries){entries.forEach(function(en){if(en.isIntersecting){en.target.style.animation='fadeUp .55s both';obs.unobserve(en.target);}});},{threshold:0.1});
+  document.querySelectorAll('.step-card,.feat,.cta-box').forEach(function(el){el.style.opacity='0';obs.observe(el);});
+})();
+</script>
+</body>
+</html>
