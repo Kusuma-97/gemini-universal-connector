@@ -125,6 +125,21 @@ body.light .ti-moon{opacity:.4;}body.light .ti-sun{opacity:1;}
 </style>
 </head>
 <body>
+<script>
+(function(){
+  var API="https://vjauyfgrxwxtfztynclf.supabase.co/functions/v1";
+  var ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqYXV5ZmdyeHd4dGZ6dHluY2xmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NzIwNTMsImV4cCI6MjA5MTE0ODA1M30.W3V1EowadpQ2bcX5DN91OAyXWc0BrnSg98zAITafSMU";
+  var MAP={"/quiz":"generate-quiz","/feedback":"submit-feedback","/api/login":"auth-login","/api/signup":"auth-signup","/api/save_quiz":"save-quiz","/api/get_profile":"get-profile","/api/save_profile":"save-profile","/summary":"generate-summary","/transcript":"get-transcript"};
+  var _f=window.fetch;
+  window.fetch=function(u,o){
+    if(typeof u==="string"){
+      for(var k in MAP){if(u===k||u.startsWith(k+"?")){u=API+"/"+MAP[k]+u.slice(k.length);o=o||{};o.headers=Object.assign({"Authorization":"Bearer "+ANON,"apikey":ANON},o.headers||{});break;}}
+    }
+    return _f.call(this,u,o);
+  };
+})();
+</script>
+
 <div id="particles"></div>
 <div class="orb orb1"></div><div class="orb orb2"></div>
 <div class="beam" style="left:18%;height:55%;top:8%;animation-duration:4.5s;"></div>
