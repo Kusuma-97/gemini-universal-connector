@@ -691,16 +691,21 @@ render();
 function syncProfile() {
   var user = getUser();
   if(user && user.id) {
+    var history = JSON.parse(localStorage.getItem('v2q-history') || '[]');
     fetch('/api/get_profile', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({user_id: user.id})
+      body: JSON.stringify({user_id: user.id, name: user.name, email: user.email, initials: user.initials, avatar: user.avatar, bio: user.bio, history: history})
     }).then(r=>r.json()).then(d=>{
-      if(d.status==='ok') {
-        var u = d.user; u.signedIn = true;
-        saveUser(u);
-        localStorage.setItem('v2q-history', JSON.stringify(d.history));
-        render(); // re-render with fresh data
+      if(d.status==='ok' && d.user) {
+        // Merge server data with local data — local wins for any field the server didn't return
+        var merged = Object.assign({}, user, d.user);
+        merged.signedIn = true;
+        saveUser(merged);
+        if(d.history && d.history.length) {
+          localStorage.setItem('v2q-history', JSON.stringify(d.history));
+        }
+        render();
       }
     }).catch(e=>{});
   }
