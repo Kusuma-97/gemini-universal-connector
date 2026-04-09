@@ -1128,16 +1128,17 @@ function saveQuizResult(pct, total, diff, source) {
     localStorage.setItem('v2q-history', JSON.stringify(history));
 
     if(user && user.id) {
+       var token = localStorage.getItem('v2q-token') || '';
        fetch('/api/save_quiz', {
          method: 'POST',
          headers: {'Content-Type':'application/json'},
          body: JSON.stringify({
-            user_id: user.id,
-            title: title,
-            score: pct,
-            questions: total,
-            diff: diff,
-            source: source
+            access_token: token,
+            score_pct: pct,
+            num_questions: total,
+            difficulty: diff,
+            source_type: source,
+            topic: title
          })
        }).catch(e=>{});
     }

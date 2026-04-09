@@ -306,6 +306,8 @@ function doSignIn(){
     if(data.error) { showErr(data.error); return; }
     var user = data.user;
     user.signedIn = true;
+    if(user.access_token) localStorage.setItem('v2q-token', user.access_token);
+    if(user.refresh_token) localStorage.setItem('v2q-refresh', user.refresh_token);
     localStorage.setItem('v2q-user', JSON.stringify(user));
     window.location.href='app.html';
   }).catch(e => {
@@ -334,6 +336,8 @@ function doSignUp(){
     if(data.error) { showErr(data.error); return; }
     var user = data.user;
     user.signedIn = true;
+    if(user.access_token) localStorage.setItem('v2q-token', user.access_token);
+    if(user.refresh_token) localStorage.setItem('v2q-refresh', user.refresh_token);
     localStorage.setItem('v2q-user', JSON.stringify(user));
     window.location.href='app.html';
   }).catch(e => {
