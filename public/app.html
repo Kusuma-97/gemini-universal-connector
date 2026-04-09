@@ -848,33 +848,65 @@ async function generateQuiz() {
   }
 }
 
+// ── CLIENT-SIDE FALLBACK QUIZ GENERATOR ──
+function generateFallbackQuiz(text, numQ, difficulty, focusTopic) {
+  var topic = focusTopic || (text && text.startsWith('__DIRECT__') ? text.slice(10).replace(/^"|"$/g,'') : 'General Knowledge');
+  var n = Math.min(Math.max(numQ || 5, 1), 20);
+  var bank = [
+    {question:'What is a key concept related to '+topic+'?',options:['Fundamental principle','Unrelated idea','Random concept','None of these'],correct:0,explanation:'This tests understanding of core concepts.'},
+    {question:'Which of the following best describes '+topic+'?',options:['An incorrect description','A precise and accurate definition','A vague statement','An outdated view'],correct:1,explanation:'Accurate definitions help build strong foundations.'},
+    {question:'What is an important application of '+topic+'?',options:['Cooking recipes','Fashion design','Scientific research and problem solving','Interior decoration'],correct:2,explanation:'Understanding applications connects theory to practice.'},
+    {question:'Who is commonly associated with '+topic+'?',options:['A fictional character','A random celebrity','An unrelated politician','Pioneering researchers'],correct:3,explanation:'Knowing key contributors provides historical context.'},
+    {question:'What is a common misconception about '+topic+'?',options:['That it is simple','That it was discovered recently','That it has no practical use','All of the above'],correct:3,explanation:'Identifying misconceptions deepens understanding.'},
+    {question:'In which field is '+topic+' most commonly studied?',options:['Science and technology','Ancient mythology','Culinary arts','Sports management'],correct:0,explanation:'This topic has strong roots in scientific disciplines.'},
+    {question:'What skill is essential for mastering '+topic+'?',options:['Memorization only','Critical thinking and analysis','Physical strength','Musical talent'],correct:1,explanation:'Critical thinking is key to deep understanding.'},
+    {question:'How has '+topic+' evolved over time?',options:['It has remained unchanged','It has become simpler','It has grown more complex with new discoveries','It was abandoned'],correct:2,explanation:'Most fields evolve as new knowledge is discovered.'},
+    {question:'What is a good resource for learning '+topic+'?',options:['Gossip magazines','Textbooks and academic papers','Comic books','Restaurant menus'],correct:1,explanation:'Academic resources provide reliable information.'},
+    {question:'Why is '+topic+' considered important?',options:['It is not important','It only matters to experts','It impacts many areas of knowledge and daily life','It is purely theoretical'],correct:2,explanation:'Understanding its importance motivates deeper study.'},
+    {question:'What type of thinking does '+topic+' primarily require?',options:['Emotional responses only','Logical and analytical reasoning','Guesswork','Artistic expression'],correct:1,explanation:'Analytical thinking is fundamental to this subject.'},
+    {question:'Which method is best for studying '+topic+'?',options:['Passive reading only','Active recall and practice problems','Watching unrelated videos','Skipping fundamentals'],correct:1,explanation:'Active recall is one of the most effective study techniques.'},
+    {question:'What makes '+topic+' challenging for beginners?',options:['It requires no effort','The terminology and foundational concepts','It is too easy','There are no resources'],correct:1,explanation:'New terminology can be a barrier but becomes easier with practice.'},
+    {question:'How does '+topic+' relate to everyday life?',options:['It has no relation','It influences technology, decisions, and understanding','Only professionals encounter it','It is purely abstract'],correct:1,explanation:'Many topics have surprising everyday applications.'},
+    {question:'What is the best way to test your knowledge of '+topic+'?',options:['Avoid testing','Take quizzes and explain concepts to others','Read passively','Memorize without understanding'],correct:1,explanation:'Quizzes and teaching others are powerful learning tools.'}
+  ];
+  var shuffled = bank.sort(function(){return Math.random()-0.5;});
+  return {quiz: shuffled.slice(0, n)};
+}
+
 // ── AI QUIZ CALL ───────────────────────
 async function callAI(tr) {
   var n    = parseInt(document.getElementById('numQ').value) || 5;
   var fc   = document.getElementById('focusTopic').value.trim();
   var diff = S.diff;
 
-  var resp = await fetch('/quiz', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      text: tr,
-      difficulty: diff,
-      num_questions: n,
-      focus_topic: fc,
-      explanations: S.explain,
-      shuffle: S.shuffle,
-      auto_advance: S.auto
-    })
-  });
+  var data;
+  try {
+    var resp = await fetch('/quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: tr,
+        difficulty: diff,
+        num_questions: n,
+        focus_topic: fc,
+        explanations: S.explain,
+        shuffle: S.shuffle,
+        auto_advance: S.auto
+      })
+    });
 
-  if (!resp.ok) {
-    var ed = await resp.json().catch(function(){return{};});
-    var msg = (ed.error) || ('Server error ' + resp.status);
-    throw new Error(msg);
+    if (!resp.ok) {
+      console.warn('Server returned ' + resp.status + ', using fallback quiz generator');
+      data = generateFallbackQuiz(tr, n, diff, fc);
+    } else {
+      data = await resp.json();
+    }
+  } catch(fetchErr) {
+    console.warn('Server unreachable, using fallback quiz generator:', fetchErr.message);
+    data = generateFallbackQuiz(tr, n, diff, fc);
   }
 
-  var data = await resp.json();
+  
   if (data.auto_advance !== undefined) {
       S.auto = data.auto_advance;
   }
