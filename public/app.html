@@ -906,7 +906,7 @@ async function callAI(tr) {
     data = generateFallbackQuiz(tr, n, diff, fc);
   }
 
-  var data = await resp.json();
+  
   if (data.auto_advance !== undefined) {
       S.auto = data.auto_advance;
   }
