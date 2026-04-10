@@ -881,9 +881,12 @@ async function callAI(tr) {
 
   var data;
   try {
+    var controller = new AbortController();
+    var timeout = setTimeout(function() { controller.abort(); }, 60000);
     var resp = await fetch('/quiz', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         text: tr,
         difficulty: diff,
@@ -894,16 +897,32 @@ async function callAI(tr) {
         auto_advance: S.auto
       })
     });
+    clearTimeout(timeout);
 
     if (!resp.ok) {
-      console.warn('Server returned ' + resp.status + ', using fallback quiz generator');
+      var errBody = '';
+      try { errBody = (await resp.json()).error || ''; } catch(e) {}
+      console.warn('Server returned ' + resp.status + ': ' + errBody);
+      if (resp.status === 429 || resp.status === 402) {
+        throw new Error(errBody || 'Service temporarily unavailable. Please try again.');
+      }
+      console.warn('Using fallback quiz generator');
       data = generateFallbackQuiz(tr, n, diff, fc);
+      data._fallback = true;
     } else {
       data = await resp.json();
+      if (data.error) throw new Error(data.error);
     }
   } catch(fetchErr) {
-    console.warn('Server unreachable, using fallback quiz generator:', fetchErr.message);
-    data = generateFallbackQuiz(tr, n, diff, fc);
+    if (fetchErr.name === 'AbortError') {
+      console.warn('Request timed out, using fallback');
+    } else if (fetchErr.message && !fetchErr.message.includes('fallback')) {
+      throw fetchErr; // Re-throw meaningful errors (rate limit, credits, etc.)
+    }
+    if (!data) {
+      data = generateFallbackQuiz(tr, n, diff, fc);
+      data._fallback = true;
+    }
   }
 
   
